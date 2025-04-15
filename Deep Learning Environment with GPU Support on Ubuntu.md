@@ -19,6 +19,11 @@ Before we start, ensure:
 
 ---
 
+## WSL2 Setup
+If you are setting up a deep learning environment on WSL2, refer to this guide: [CUDA on WSL2](https://fahimfba.github.io/CUDA-WSL2-Ubuntu/#/)
+
+---
+
 ## 1. Check GPU Compatibility
 ```bash
 lspci | grep -i nvidia
@@ -290,6 +295,32 @@ for i in range(3):
 - The script will demonstrate a significant speed-up for GPU operations compared to CPU.
 
 **Script Reference:** [CUDA on WSL2 by FahimFBA](https://fahimfba.github.io/CUDA-WSL2-Ubuntu/#/?id=step-13-test)
+
+---
+
+## 14. Uninstall TensorFlow and PyTorch from the Environment
+If you need to uninstall TensorFlow or PyTorch from your virtual environment, follow these steps:
+
+### Uninstall TensorFlow
+To remove TensorFlow, run:
+```bash
+pip uninstall tensorflow
+```
+This command will prompt you to confirm the uninstallation. Type `y` to proceed.
+
+### Uninstall PyTorch
+To remove PyTorch and its related packages, run:
+```bash
+pip uninstall torch torchvision torchaudio
+```
+This will also prompt you to confirm the uninstallation. Type `y` to proceed.
+
+### Verify Uninstallation
+After uninstallation, you can verify that the packages are no longer installed by running:
+```bash
+pip list
+```
+This will display a list of all installed packages in the virtual environment. Ensure TensorFlow and PyTorch are not listed.
 
 ---
 
