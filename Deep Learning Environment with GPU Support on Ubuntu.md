@@ -291,8 +291,21 @@ for i in range(3):
 ```
 
 ### Expected Output
-- For `torch.cuda.is_available()`, the output should be `True`.
-- The script will demonstrate a significant speed-up for GPU operations compared to CPU.
+```
+using cuda device
+************* CPU SPEED *******************
+13.136075019836426
+verify device: cpu
+************* GPU SPEED *******************
+4.386947393417358
+verify device: cuda:0
+************* GPU SPEED *******************
+4.460808992385864
+verify device: cuda:0
+************* GPU SPEED *******************
+4.532717943191528
+verify device: cuda:0
+```
 
 **Script Reference:** [CUDA on WSL2 by FahimFBA](https://fahimfba.github.io/CUDA-WSL2-Ubuntu/#/?id=step-13-test)
 
