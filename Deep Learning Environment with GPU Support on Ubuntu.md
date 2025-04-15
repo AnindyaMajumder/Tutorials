@@ -2,8 +2,6 @@
 
 This guide will walk you through the process of setting up a GPU-accelerated deep learning environment on Ubuntu 24.04. Each command is explained in detail to help beginners understand the purpose of every step.
 
-**Note:** While both PyTorch and TensorFlow can be installed in the same environment, it is recommended to use separate virtual environments for each framework to avoid version conflicts or unexpected behavior.
-
 ---
 
 ## Why Use a GPU for Deep Learning?
