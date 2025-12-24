@@ -44,3 +44,77 @@ ssh -o StrictHostKeyChecking=no root@195.35.56.142
 ```
 This will accept the host key for that session without saving it. Do not use this habitually.
 
+## VPS Setup
+Connect to the VPS through SSH with IPv4 and root password
+```bash
+ssh root@195.35.56.142
+```
+Update System & Install Dependencies
+```bash
+apt update && apt upgrade -y
+apt install -y git curl wget nano ufw
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+apt install -y docker-compose-plugin
+docker --version
+docker compose version
+```
+Configure Firewall
+```bash
+# Allow SSH
+ufw allow 22
+
+# Allow HTTP/HTTPS
+ufw allow 80
+ufw allow 443
+
+# Allow your app port (check your docker-compose.yml for the exposed port)
+ufw allow 8000
+
+# Enable firewall
+ufw enable
+```
+Clone Your Repository (if public)
+```bash
+git clone https://github.com/AnindyaMajumder/Learn-English-AI.git .
+```
+### If private repository
+Generate a Deploy Key on VPS
+```bash
+ssh-keygen -t ed25519 -C "hostinger-vps-deploy" -f ~/.ssh/github_deploy -N ""
+
+# View the public key
+cat ~/.ssh/github_deploy.pub
+```
+Add Deploy Key to GitHub
+Go to: https://github.com/AnindyaMajumder/Learn-English-AI/settings/keys
+Click "Add deploy key" -> Paste the public key -> ✅ Check "Allow write access" (optional, not needed for pull-only) -> Click "Add key"
+
+Configure SSH on VPS to Use the Key
+```bash
+nano ~/.ssh/config
+```
+Add this content:
+```
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/github_deploy
+    IdentitiesOnly yes
+```
+Set permissions
+```bash
+chmod 600 ~/.ssh/config
+```
+Test Github Connections
+```bash
+ssh -T git@github.com
+```
+> Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+
+Clone Repository through SSH
+```bash
+git@github.com:AnindyaMajumder/Learn-English-AI.git
+```
