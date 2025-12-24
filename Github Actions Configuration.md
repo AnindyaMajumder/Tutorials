@@ -118,3 +118,34 @@ Clone Repository through SSH
 ```bash
 git@github.com:AnindyaMajumder/Learn-English-AI.git
 ```
+
+## Up your repository
+Enter the directory of clonned repository
+Set Up SSH Key for GitHub Actions
+```bash
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/hostinger_deploy -N ""
+
+cat ~/.ssh/hostinger_deploy
+cat ~/.ssh/hostinger_deploy.pub
+```
+Add Public Key to VPS
+```bash
+# Add the public key to authorized_keys
+nano ~/.ssh/authorized_keys
+# Paste the public key content and save
+
+# Set correct permissions
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+```
+
+### Configure GitHub Secrets
+Add these secrets:
+```
+SSH_HOST	195.35.56.142
+SSH_USERNAME	root
+SSH_PRIVATE_KEY	(paste entire private key including BEGIN/END lines)
+SSH_PORT	22
+DEPLOY_PATH	/home/ColWords
+```
+Lastly update the `.github/workflow/deploy.yml`
