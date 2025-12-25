@@ -149,3 +149,59 @@ SSH_PORT	22
 DEPLOY_PATH	/home/ColWords
 ```
 Lastly update the `.github/workflow/deploy.yml`
+
+## Set up nginx for port forwarding 
+> (Assuming the server is running on different port)
+
+Check nginx configuration for reverse proxy
+```bash
+sudo nginx -t
+```
+Check if the local server is running
+```bash
+curl http://localhost:8000
+```
+Edit the Nginx Configuration
+```bash
+sudo nano /etc/nginx/sites-available/default
+```
+Copy and paste this script
+```
+server {
+    listen 80;
+    server_name chat.eflip.com;  
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+Check the syntax and configuration again
+```bash
+sudo nginx -t
+```
+Install Certbot
+```bash
+sudo apt install certbot python3-certbot-nginx
+```
+Run certbot with the domain/subdomain to active SSL
+```bash
+sudo certbot --nginx -d chat.eflip.com
+```
+Baaannnggg!! HTTPS enabled!!
+> Let's Encrypt certificates are valid for 90 days. When you installed Certbot (using apt install), it automatically set up a background timer to check your certificates twice a day and renew any that are close to expiring. You usually don't need to do anything manually.
+
+Check if Auto-Renewal is working
+```bash
+sudo certbot renew --dry-run
+```
+If auto-renewal failed, try manually
+```bash
+sudo certbot renew
+```
