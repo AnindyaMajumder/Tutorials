@@ -259,3 +259,4 @@ sudo certbot renew --dry-run
 ```
 
 > Certificates are automatically renewed. Manual renewal is rarely needed.
+> Test your domain accessibility from https://globalping.io/
