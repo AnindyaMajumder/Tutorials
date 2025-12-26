@@ -1,177 +1,223 @@
-##  Clean your any exisitng ssh blocking to your machine
+## Clean existing SSH host key issues
 
-1) Inspect the offending known_hosts line (optional)
+This section helps remove old or incorrect SSH host keys and safely add the correct one.
+
+### 1) Inspect the problematic `known_hosts` line (optional)
+
 ```bash
 sed -n '9p' ~/.ssh/known_hosts
 ```
 
-2) Remove the old entry (recommended; this is the SSH-provided command)
+### 2) Remove the old host entry (recommended)
+
 ```bash
-ssh-keygen -f ~/.ssh/known_hosts -R '195.35.56.142'
+ssh-keygen -f ~/.ssh/known_hosts -R '<SERVER_IP>'
 ```
 
-3) Fetch the new host key and compute its SHA256 fingerprint (do this before adding it)
+### 3) Fetch the new host key and verify its fingerprint
+
 ```bash
-# Save the host key to a temp file
-ssh-keyscan -t ed25519 195.35.56.142 > /tmp/hostkey.pub 2>/dev/null
+# Save the host key to a temporary file
+ssh-keyscan -t ed25519 <SERVER_IP> > /tmp/hostkey.pub 2>/dev/null
 
 # Show the SHA256 fingerprint for verification
 ssh-keygen -lf -E sha256 /tmp/hostkey.pub
 ```
 
-- The fingerprint you posted from the SSH warning was:
-  SHA256:2yovb6F0QtHZ6mRqcUeV41BZZLLl+z3NutDRRJmJWiU
-- Compare the output of the `ssh-keygen -lf` command with that string.
-- If you have access to Hostinger control panel (or Hostinger support), also verify the fingerprint there before trusting it.
+* Compare the displayed fingerprint with the one provided by the server provider or administrator.
+* Only continue if the fingerprints match.
 
-4) If the fingerprint matches what you expect (or support confirms), add the host key for both the IP and hostname:
+### 4) Add the verified host key (IP and hostname)
+
 ```bash
-# Add both the IP and hostname entry to your known_hosts
-ssh-keyscan -t ed25519 195.35.56.142 srv1218075.hstgr.cloud >> ~/.ssh/known_hosts
-# Secure the file permissions
+ssh-keyscan -t ed25519 <SERVER_IP> <SERVER_HOSTNAME> >> ~/.ssh/known_hosts
 chmod 600 ~/.ssh/known_hosts
 ```
 
-5) Reconnect via SSH
+### 5) Reconnect via SSH
+
 ```bash
-ssh root@195.35.56.142
+ssh <SSH_USER>@<SERVER_IP>
 ```
 
-Quick alternative (temporary, less secure)
-- If you need an immediate, temporary bypass (not recommended for production):
-```bash
-ssh -o StrictHostKeyChecking=no root@195.35.56.142
-```
-This will accept the host key for that session without saving it. Do not use this habitually.
+#### Quick alternative (temporary, less secure)
 
-## VPS Setup
-Connect to the VPS through SSH with IPv4 and root password
+> Use only for short-term testing.
+
 ```bash
-ssh root@195.35.56.142
+ssh -o StrictHostKeyChecking=no <SSH_USER>@<SERVER_IP>
 ```
-Update System & Install Dependencies
+
+---
+
+## VPS basic setup
+
+### Connect to the server
+
+```bash
+ssh <SSH_USER>@<SERVER_IP>
+```
+
+### Update system and install common tools
+
 ```bash
 apt update && apt upgrade -y
 apt install -y git curl wget nano ufw
+```
 
-# Install Docker
+### Install Docker
+
+```bash
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 apt install -y docker-compose-plugin
+
 docker --version
 docker compose version
 ```
-Configure Firewall
+
+### Configure firewall (UFW)
+
 ```bash
 # Allow SSH
 ufw allow 22
 
-# Allow HTTP/HTTPS
+# Allow HTTP and HTTPS
 ufw allow 80
 ufw allow 443
 
-# Allow your app port (check your docker-compose.yml for the exposed port)
-ufw allow 8000
+# Allow application port (adjust if needed)
+ufw allow <APP_PORT>
 
 # Enable firewall
 ufw enable
 ```
-Clone Your Repository (if public)
-```bash
-git clone https://github.com/AnindyaMajumder/Learn-English-AI.git .
-```
-### If private repository
-Generate a Deploy Key on VPS
-```bash
-ssh-keygen -t ed25519 -C "hostinger-vps-deploy" -f ~/.ssh/github_deploy -N ""
 
-# View the public key
-cat ~/.ssh/github_deploy.pub
-```
-Add Deploy Key to GitHub
-Go to: https://github.com/AnindyaMajumder/Learn-English-AI/settings/keys
-Click "Add deploy key" -> Paste the public key -> ✅ Check "Allow write access" (optional, not needed for pull-only) -> Click "Add key"
+---
 
-Configure SSH on VPS to Use the Key
+## Clone a Git repository
+
+### Public repository
+
+```bash
+git clone <REPOSITORY_URL> .
+```
+
+### Private repository (using deploy key)
+
+#### Generate a deploy key on the server
+
+```bash
+ssh-keygen -t ed25519 -C "server-deploy-key" -f ~/.ssh/repo_deploy -N ""
+
+cat ~/.ssh/repo_deploy.pub
+```
+
+#### Add the deploy key to the Git hosting platform
+
+* Go to the repository settings
+* Add a **Deploy Key**
+* Paste the public key
+* Enable write access only if required
+
+#### Configure SSH to use the deploy key
+
 ```bash
 nano ~/.ssh/config
 ```
-Add this content:
-```
-Host github.com
-    HostName github.com
+
+```text
+Host git-host
+    HostName git-host
     User git
-    IdentityFile ~/.ssh/github_deploy
+    IdentityFile ~/.ssh/repo_deploy
     IdentitiesOnly yes
 ```
-Set permissions
+
 ```bash
 chmod 600 ~/.ssh/config
 ```
-Test Github Connections
-```bash
-ssh -T git@github.com
-```
-> Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
 
-Clone Repository through SSH
+#### Test connection
+
 ```bash
-git@github.com:AnindyaMajumder/Learn-English-AI.git
+ssh -T git@git-host
 ```
 
-## Up your repository
-Enter the directory of clonned repository
-Set Up SSH Key for GitHub Actions
-```bash
-ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/hostinger_deploy -N ""
+#### Clone via SSH
 
-cat ~/.ssh/hostinger_deploy
-cat ~/.ssh/hostinger_deploy.pub
-```
-Add Public Key to VPS
 ```bash
-# Add the public key to authorized_keys
+git clone git@git-host:<ORG>/<REPO>.git
+```
+
+---
+
+## Set up server access for automated deployments
+
+### Generate an SSH key for CI/CD
+
+```bash
+ssh-keygen -t ed25519 -C "ci-deploy" -f ~/.ssh/ci_deploy -N ""
+
+cat ~/.ssh/ci_deploy.pub
+```
+
+### Add public key to the server
+
+```bash
 nano ~/.ssh/authorized_keys
-# Paste the public key content and save
+```
 
-# Set correct permissions
+```bash
 chmod 700 ~/.ssh
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-### Configure GitHub Secrets
-Add these secrets:
-```
-SSH_HOST	195.35.56.142
-SSH_USERNAME	root
-SSH_PRIVATE_KEY	(paste entire private key including BEGIN/END lines)
-SSH_PORT	22
-DEPLOY_PATH	/home/ColWords
-```
-Lastly update the `.github/workflow/deploy.yml`
+### Configure CI/CD secrets
 
-## Set up nginx for port forwarding 
-> (Assuming the server is running on different port)
+Add the following secrets to your pipeline:
 
-Check nginx configuration for reverse proxy
+```
+SSH_HOST=<SERVER_IP>
+SSH_USERNAME=<SSH_USER>
+SSH_PRIVATE_KEY=<PRIVATE_KEY_CONTENT>
+SSH_PORT=22
+DEPLOY_PATH=<DEPLOY_DIRECTORY>
+```
+
+Update the deployment workflow file accordingly.
+
+---
+
+## Nginx reverse proxy and HTTPS setup
+
+> Assumes the application runs on a local port.
+
+### Test Nginx configuration
+
 ```bash
 sudo nginx -t
 ```
-Check if the local server is running
+
+### Verify the local application
+
 ```bash
-curl http://localhost:8000
+curl http://localhost:<APP_PORT>
 ```
-Edit the Nginx Configuration
+
+### Edit Nginx site configuration
+
 ```bash
 sudo nano /etc/nginx/sites-available/default
 ```
-Copy and paste this script
-```
+
+```nginx
 server {
     listen 80;
-    server_name chat.eflip.com;  
+    server_name <DOMAIN_NAME>;
+
     location / {
-        proxy_pass http://localhost:8000;
+        proxy_pass http://localhost:<APP_PORT>;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -182,26 +228,34 @@ server {
     }
 }
 ```
-Check the syntax and configuration again
+
+### Validate and reload Nginx
+
 ```bash
 sudo nginx -t
+sudo systemctl reload nginx
 ```
-Install Certbot
+
+---
+
+## Enable HTTPS with Certbot
+
+### Install Certbot
+
 ```bash
 sudo apt install certbot python3-certbot-nginx
 ```
-Run certbot with the domain/subdomain to active SSL
-```bash
-sudo certbot --nginx -d chat.eflip.com
-```
-Baaannnggg!! HTTPS enabled!!
-> Let's Encrypt certificates are valid for 90 days. When you installed Certbot (using apt install), it automatically set up a background timer to check your certificates twice a day and renew any that are close to expiring. You usually don't need to do anything manually.
 
-Check if Auto-Renewal is working
+### Obtain and install SSL certificate
+
+```bash
+sudo certbot --nginx -d <DOMAIN_NAME>
+```
+
+### Test automatic renewal
+
 ```bash
 sudo certbot renew --dry-run
 ```
-If auto-renewal failed, try manually
-```bash
-sudo certbot renew
-```
+
+> Certificates are automatically renewed. Manual renewal is rarely needed.
